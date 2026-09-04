@@ -12,7 +12,7 @@
   --note-color:#7fb069;
   --shadow:0 2px 10px rgba(0,0,0,.05);
   --radius:8px;
-  --serif-cn:"LXGW WenKai","LXGW WenKai Screen","Kaiti SC","STKaiti","KaiTi","楷体","楷体_GB2312",KaiTi,serif;
+  --serif-cn:"KaiTi","STKaiti","Kaiti SC","楷体","楷体_GB2312","LXGW WenKai","LXGW WenKai Screen",serif;
   --serif-en:Georgia,"Times New Roman",serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -183,6 +183,7 @@ mark.hl{background:var(--mark-bg);color:inherit;padding:0 1px;border-radius:2px;
 .float-trans .ft-source{font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.6;border-bottom:1px dashed var(--line);padding-bottom:6px}
 .float-trans .ft-result{font-size:13.5px;line-height:1.7}
 .float-trans .ft-provider{font-size:11px;color:#aaa;margin-top:6px;text-align:right}
+.float-trans .ft-warn{font-size:11px;color:#d98c2b;margin-top:4px;line-height:1.5;background:rgba(217,140,43,.08);padding:3px 6px;border-radius:4px}
 
 /* 翻译设置弹层 */
 .settings-body{padding:18px}

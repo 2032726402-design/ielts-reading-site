@@ -290,7 +290,8 @@
       ft.innerHTML = res && res.text
         ? `<div class="ft-source">${esc(text.length > 80 ? text.slice(0, 80) + "…" : text)}</div>` +
           `<div class="ft-result">${esc(res.text.length > 300 ? res.text.slice(0, 300) + "…" : res.text)}</div>` +
-          (res.provider ? `<div class="ft-provider">via ${esc(res.provider)}</div>` : "")
+          (res.provider ? `<div class="ft-provider">via ${esc(res.provider)}</div>` : "") +
+          (res.warn ? `<div class="ft-warn">${esc(res.warn)}</div>` : "")
         : `<div class="ft-result">未能获取翻译，请检查网络。</div>`;
     }).catch(() => {
       if (!ft.classList.contains("hidden")) ft.innerHTML = `<div class="ft-result">翻译服务暂不可用。</div>`;
@@ -438,19 +439,26 @@
     return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  /* DeepL API（需 auth key，免费版 api-free.deepl.com） */
+  /* DeepL API（免费 Key 以 :fx 结尾走 api-free.deepl.com，否则 Pro 走 api.deepl.com） */
   async function translateDeepL(text, to, cfg) {
     if (!cfg.deeplKey) throw new Error("no deepl key");
-    const target = to === "zh-CN" ? "ZH" : to === "en" ? "EN-US" : to;
-    const resp = await fetch("https://api-free.deepl.com/v2/translate", {
+    const key = cfg.deeplKey.trim();
+    const target = to === "zh-CN" ? "ZH-HANS" : to === "en" ? "EN-US" : to;
+    const base = /:fx$/i.test(key)
+      ? "https://api-free.deepl.com/v2/translate"
+      : "https://api.deepl.com/v2/translate";
+    const resp = await fetch(base, {
       method: "POST",
       headers: {
-        "Authorization": "DeepL-Auth-Key " + cfg.deeplKey,
+        "Authorization": "DeepL-Auth-Key " + key,
         "Content-Type": "application/x-www-form-urlencoded"
       },
       body: new URLSearchParams({ text, target_lang: target }) // source_lang 留空自动检测
     });
-    if (!resp.ok) throw new Error("deepl http " + resp.status);
+    if (!resp.ok) {
+      const detail = await resp.text().catch(() => "");
+      throw new Error("DeepL HTTP " + resp.status + (detail ? " " + detail.slice(0, 200) : ""));
+    }
     const data = await resp.json();
     const t = (data.translations && data.translations[0] && data.translations[0].text) || "";
     return { text: t, provider: "DeepL" };
@@ -458,11 +466,19 @@
 
   async function translateText(text, from, to) {
     const cfg = getTransCfg();
+    // 所选引擎失败时回退 MyMemory，但保留失败原因展示给用户
+    const fallback = async (reason) => {
+      const r = await translateMyMemory(text, from, to);
+      if (reason) r.warn = reason;
+      return r;
+    };
     if (cfg.provider === "youdao" && cfg.youdaoKey) {
-      try { return await translateYoudao(text, from, to, cfg); } catch (e) { /* 回退 */ }
+      try { return await translateYoudao(text, from, to, cfg); }
+      catch (e) { return await fallback("有道智云调用失败：" + (e && e.message ? e.message : e)); }
     }
     if (cfg.provider === "deepl" && cfg.deeplKey) {
-      try { return await translateDeepL(text, to, cfg); } catch (e) { /* 回退 */ }
+      try { return await translateDeepL(text, to, cfg); }
+      catch (e) { return await fallback("DeepL 调用失败：" + (e && e.message ? e.message : e)); }
     }
     return await translateMyMemory(text, from, to);
   }
