@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日阅读 · Daily Reading</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="fonts/lxgw/lxgwwenkai-regular.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <h1 class="logo">每日阅读 <span>Daily Reading</span></h1>
+    <nav class="main-nav">
+      <button class="nav-btn active" data-cat="en">雅思英语</button>
+      <button class="nav-btn" data-cat="zh">中文读写</button>
+    </nav>
+    <button id="btn-bookmarks" class="icon-btn" title="书签">书签 (<span id="bookmark-count">0</span>)</button>
+    <button id="btn-notes" class="icon-btn" title="笔记">笔记 (<span id="note-count">0</span>)</button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- 左侧文章列表 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">文章列表</div>
+    <ul class="article-list" id="article-list"></ul>
+    <div class="sidebar-note" id="daily-update-tip"></div>
+  </aside>
+
+  <!-- 阅读区 -->
+  <section class="reader">
+    <div class="reader-head">
+      <h2 class="reader-title" id="reader-title"></h2>
+      <div class="reader-meta" id="reader-meta"></div>
+    </div>
+    <article class="article-body" id="article-body"></article>
+    <div class="reader-footer" id="reader-footer">选中文字可高亮、划线、翻译、记笔记；点击英文单词查看释义与例句；点「书签」收藏本文或段落。数据保存在本地浏览器。</div>
+  </section>
+
+  <!-- 右侧工具面板 -->
+  <aside class="sidepanel" id="sidepanel">
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-panel="word">单词</button>
+      <button class="panel-tab" data-panel="note">笔记</button>
+      <button class="panel-tab" data-panel="bookmark">书签</button>
+    </div>
+    <div class="panel-content" id="panel-word">
+      <div class="panel-hint">选中英文单词或短语，点击「查询释义」查看解释与应用示例。</div>
+      <div id="word-result"></div>
+    </div>
+    <div class="panel-content hidden" id="panel-note">
+      <ul class="note-list" id="note-list"></ul>
+    </div>
+    <div class="panel-content hidden" id="panel-bookmark">
+      <ul class="bookmark-list" id="bookmark-list"></ul>
+    </div>
+  </aside>
+</main>
+
+<!-- 选中文字浮动工具条 -->
+<div class="float-toolbar hidden" id="float-toolbar">
+  <button class="ft-btn" data-action="highlight">高亮</button>
+  <button class="ft-btn" data-action="underline">划线</button>
+  <button class="ft-btn" data-action="translate">翻译</button>
+  <button class="ft-btn" data-action="note">笔记</button>
+  <button class="ft-btn" data-action="word">查询释义</button>
+</div>
+
+<!-- 翻译结果弹层 -->
+<div class="modal-mask hidden" id="translate-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span>翻译结果</span>
+      <button class="modal-close" id="translate-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-original" id="translate-source"></div>
+      <div class="modal-trans" id="translate-result">翻译中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- 单词详情弹层 -->
+<div class="modal-mask hidden" id="word-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span>单词详解</span>
+      <button class="modal-close" id="word-close">&times;</button>
+    </div>
+    <div class="modal-body" id="word-detail"></div>
+  </div>
+</div>
+
+<!-- 笔记编辑弹层 -->
+<div class="modal-mask hidden" id="note-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span>添加笔记</span>
+      <button class="modal-close" id="note-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-original" id="note-source"></div>
+      <textarea id="note-input" placeholder="写下你的理解、批注或联想…"></textarea>
+      <button class="primary-btn" id="note-save">保存笔记</button>
+    </div>
+  </div>
+</div>
+
+<script src="data/articles-en.js"></script>
+<script src="data/articles-zh.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
