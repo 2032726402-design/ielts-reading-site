@@ -59,7 +59,6 @@
       case "hl":  return { open: `<mark class="hl" data-key="${key}">`, close: "</mark>" };
       case "ul":  return { open: `<span class="ul" data-key="${key}">`, close: "</span>" };
       case "note":return { open: `<span class="note-flag" data-key="${key}">`, close: "</span>" };
-      case "word":return { open: `<span class="word-tap" data-word="${escAttr(key)}">`, close: "</span>" };
       default: return { open: "", close: "" };
     }
   }
@@ -68,16 +67,8 @@
   function escAttr(s) { return esc(s).replace(/"/g, "&quot;"); }
 
   /* 从纯文本段落生成带标记的 HTML */
-  function buildParagraphHTML(plain, hlSegs, ulSegs, noteSegs, isEn) {
+  function buildParagraphHTML(plain, hlSegs, ulSegs, noteSegs) {
     const ranges = [];
-    // 单词区间（仅英文）
-    if (isEn) {
-      const re = /[A-Za-z][A-Za-z'-]{2,}/g;
-      let m;
-      while ((m = re.exec(plain)) !== null) {
-        ranges.push({ start: m.index, end: m.index + m[0].length, cls: "word", key: m[0] });
-      }
-    }
     // 高亮/划线/笔记区间
     [[hlSegs, "hl"], [ulSegs, "ul"], [noteSegs, "note"]].forEach(([segs, cls]) => {
       segs.forEach((s) => {
@@ -230,23 +221,41 @@
     wrap.onclick = () => toggleArticleBookmark(currentArticle);
   }
 
+  function bmKey() { return "k" + Date.now() + Math.floor(Math.random() * 1e6); }
+
   function toggleArticleBookmark(art) {
     const list = getAllBookmarks();
     const idx = list.findIndex((b) => b.articleId === art.id && b.pidx === undefined);
     if (idx >= 0) list.splice(idx, 1);
-    else list.unshift({ articleId: art.id, cat: art.cat, title: art.title, pidx: undefined, time: Date.now() });
+    else list.unshift({ key: bmKey(), articleId: art.id, cat: art.cat, title: art.title, pidx: undefined, text: "", type: "article", time: Date.now() });
     setAllBookmarks(list);
     updateBookmarkThisBtn();
     updateCounts();
   }
 
+  /* 整段书签 */
   function toggleParagraphBookmark(art, pidx, text) {
     const list = getAllBookmarks();
-    const idx = list.findIndex((b) => b.articleId === art.id && b.pidx === pidx);
+    const idx = list.findIndex((b) => b.articleId === art.id && b.pidx === pidx && b.type === "para");
     if (idx >= 0) list.splice(idx, 1);
-    else list.unshift({ articleId: art.id, cat: art.cat, title: art.title, pidx, text, time: Date.now() });
+    else list.unshift({ key: bmKey(), articleId: art.id, cat: art.cat, title: art.title, pidx, text, type: "para", time: Date.now() });
     setAllBookmarks(list);
     updateCounts();
+  }
+
+  /* 选句/半句书签：选中文字后从工具条「书签」添加；再选同一句可取消 */
+  function toggleTextBookmark(art, pidx, text) {
+    const list = getAllBookmarks();
+    const exists = list.find((b) => b.articleId === art.id && b.type === "text" && b.text === text && b.pidx === pidx);
+    if (exists) {
+      setAllBookmarks(list.filter((b) => b.key !== exists.key));
+      updateCounts();
+      return false;
+    }
+    list.unshift({ key: bmKey(), articleId: art.id, cat: art.cat, title: art.title, pidx, text, type: "text", time: Date.now() });
+    setAllBookmarks(list);
+    updateCounts();
+    return true;
   }
 
   /* ---------- 浮动工具条（选中文字） ---------- */
@@ -258,10 +267,34 @@
     toolbar.style.left = x + "px";
     toolbar.style.top = y + "px";
     lastSelection = sel;
+    showInlineTranslate(sel.toString().trim());
   }
   function hideToolbar() {
     toolbar.classList.add("hidden");
+    const ft = $("#float-trans");
+    if (ft) { ft.classList.add("hidden"); ft.innerHTML = ""; }
     lastSelection = null;
+  }
+
+  /* 划选取词自动显示翻译（浮层，不点按钮） */
+  function showInlineTranslate(text) {
+    const ft = $("#float-trans");
+    if (!ft) return;
+    if (!text) { ft.classList.add("hidden"); ft.innerHTML = ""; return; }
+    ft.classList.remove("hidden");
+    ft.innerHTML = '<div class="ft-loading">翻译中…</div>';
+    const from = currentArticle && currentArticle.cat === CAT.zh ? "zh-CN" : "en";
+    const to = currentArticle && currentArticle.cat === CAT.zh ? "en" : "zh-CN";
+    translateText(text, from, to).then((res) => {
+      if (ft.classList.contains("hidden")) return; // 浮层已关闭
+      ft.innerHTML = res && res.text
+        ? `<div class="ft-source">${esc(text.length > 80 ? text.slice(0, 80) + "…" : text)}</div>` +
+          `<div class="ft-result">${esc(res.text.length > 300 ? res.text.slice(0, 300) + "…" : res.text)}</div>` +
+          (res.provider ? `<div class="ft-provider">via ${esc(res.provider)}</div>` : "")
+        : `<div class="ft-result">未能获取翻译，请检查网络。</div>`;
+    }).catch(() => {
+      if (!ft.classList.contains("hidden")) ft.innerHTML = `<div class="ft-result">翻译服务暂不可用。</div>`;
+    });
   }
 
   document.addEventListener("mouseup", (e) => {
@@ -309,6 +342,7 @@
       case "underline": addSegment(K.ul, art, pidx, text, null); break;
       case "note": openNoteModal(art, pidx, text); break;
       case "translate": openTranslateModal(text); break;
+      case "bookmark": toggleTextBookmark(art, pidx, text); break;
       case "word": queryWord(text.split(/\s+/)[0]); break;
     }
     hideToolbar();
@@ -349,12 +383,6 @@
       if (seg) openNoteViewModal(seg);
       return;
     }
-    const wt = e.target.closest(".word-tap");
-    if (wt) {
-      e.preventDefault(); e.stopPropagation();
-      queryWord(wt.dataset.word);
-      return;
-    }
   });
 
   function removeSegment(key, aid, k) {
@@ -363,19 +391,98 @@
     if (currentArticle && currentArticle.id === aid) loadArticle(aid);
   }
 
-  /* ---------- 翻译（MyMemory 免费 API） ---------- */
+  /* ---------- 翻译（有道智云 / DeepL / MyMemory 兜底） ---------- */
+  // 设置保存在 localStorage["dl_trans_cfg"]：
+  //   { provider:"mymemory"|"youdao"|"deepl", youdaoKey, youdaoSecret, deeplKey }
+  // 有道智云与 DeepL 需在对应官网注册获取 key 后填入设置；未填时自动使用 MyMemory 免费接口。
+  function getTransCfg() {
+    return store.get("dl_trans_cfg", { provider: "mymemory", youdaoKey: "", youdaoSecret: "", deeplKey: "" });
+  }
+  function setTransCfg(cfg) { store.set("dl_trans_cfg", cfg); }
+
+  async function translateMyMemory(text, from, to) {
+    const url = "https://api.mymemory.translated.net/get?q=" +
+      encodeURIComponent(text) + "&langpair=" + encodeURIComponent(from + "|" + to);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const t = (data.responseData && data.responseData.translatedText) || "";
+    return { text: t, provider: "MyMemory" };
+  }
+
+  /* 有道智云文本翻译 API（需 appKey/appSecret） */
+  async function translateYoudao(text, from, to, cfg) {
+    if (!cfg.youdaoKey || !cfg.youdaoSecret) throw new Error("no youdao key");
+    const q = text.slice(0, 5000);
+    const salt = Date.now().toString();
+    const curtime = Math.round(Date.now() / 1000).toString();
+    // 有道签名规则：q 超过 20 个字符时取前10+长度+后10
+    let input = q;
+    if (q.length > 20) input = q.slice(0, 10) + q.length + q.slice(q.length - 10);
+    const sign = await sha256(cfg.youdaoKey + input + salt + curtime + cfg.youdaoSecret);
+    const body = new URLSearchParams({
+      q, from, to, appKey: cfg.youdaoKey, salt, sign, signType: "v3", curtime
+    });
+    const resp = await fetch("https://openapi.youdao.com/api", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+    const data = await resp.json();
+    if (data.errorCode !== "0") throw new Error("youdao error " + data.errorCode);
+    const t = (data.translation && data.translation[0]) || "";
+    return { text: t, provider: "有道智云" };
+  }
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  /* DeepL API（需 auth key，免费版 api-free.deepl.com） */
+  async function translateDeepL(text, to, cfg) {
+    if (!cfg.deeplKey) throw new Error("no deepl key");
+    const target = to === "zh-CN" ? "ZH" : to === "en" ? "EN-US" : to;
+    const resp = await fetch("https://api-free.deepl.com/v2/translate", {
+      method: "POST",
+      headers: {
+        "Authorization": "DeepL-Auth-Key " + cfg.deeplKey,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({ text, target_lang: target }) // source_lang 留空自动检测
+    });
+    if (!resp.ok) throw new Error("deepl http " + resp.status);
+    const data = await resp.json();
+    const t = (data.translations && data.translations[0] && data.translations[0].text) || "";
+    return { text: t, provider: "DeepL" };
+  }
+
+  async function translateText(text, from, to) {
+    const cfg = getTransCfg();
+    if (cfg.provider === "youdao" && cfg.youdaoKey) {
+      try { return await translateYoudao(text, from, to, cfg); } catch (e) { /* 回退 */ }
+    }
+    if (cfg.provider === "deepl" && cfg.deeplKey) {
+      try { return await translateDeepL(text, to, cfg); } catch (e) { /* 回退 */ }
+    }
+    return await translateMyMemory(text, from, to);
+  }
+
   async function openTranslateModal(text) {
     $("#translate-source").textContent = text;
     $("#translate-result").textContent = "翻译中…";
     showModal("translate-modal");
+    const langpair = currentArticle && currentArticle.cat === CAT.zh ? "zh-CN|en" : "en|zh-CN";
+    const [from, to] = langpair.split("|");
     try {
-      const langpair = currentArticle && currentArticle.cat === CAT.zh ? "zh-CN|en" : "en|zh-CN";
-      const url = "https://api.mymemory.translated.net/get?q=" +
-        encodeURIComponent(text) + "&langpair=" + langpair;
-      const resp = await fetch(url);
-      const data = await resp.json();
-      const translated = (data.responseData && data.responseData.translatedText) || "";
-      $("#translate-result").textContent = translated || "（未能获取翻译结果，请检查网络）";
+      const res = await translateText(text, from, to);
+      const t = (res && res.text) || "";
+      $("#translate-result").textContent = t || "（未能获取翻译结果，请检查网络）";
+      if (res && res.provider) {
+        const p = document.createElement("div");
+        p.className = "trans-provider";
+        p.textContent = "via " + res.provider;
+        $("#translate-result").appendChild(p);
+      }
     } catch (err) {
       $("#translate-result").textContent = "翻译服务暂不可用，请检查网络连接。";
     }
@@ -548,12 +655,14 @@
     if (!list.length) { ul.innerHTML = "<li style='color:var(--muted)'>暂无书签</li>"; return; }
     list.forEach((b) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span class="bq">${b.pidx !== undefined ? "段落 · " : ""}${esc(b.title)}</span>` +
-        (b.text ? `<span class="bq">${esc(b.text)}</span>` : "") +
+      const typeTag = b.type === "text" ? "句子" : b.type === "para" ? "段落" : "文章";
+      li.innerHTML = `<span class="bq bq-tag">${typeTag}</span>` +
+        `<span class="bq">${esc(b.title)}</span>` +
+        (b.text ? `<span class="bq bq-text">${esc(b.text.length > 50 ? b.text.slice(0, 50) + "…" : b.text)}</span>` : "") +
         `<span class="bx" title="删除书签">✕</span>`;
       li.querySelector(".bx").onclick = (e) => {
         e.stopPropagation();
-        setAllBookmarks(list.filter((x) => !(x.articleId === b.articleId && x.pidx === b.pidx)));
+        setAllBookmarks(list.filter((x) => x.key !== b.key));
         renderBookmarks();
         updateCounts();
       };
@@ -588,7 +697,34 @@
   $("#btn-bookmarks").addEventListener("click", () => switchPanel("bookmark"));
   $("#btn-notes").addEventListener("click", () => switchPanel("note"));
 
-  /* ---------- 启动 ---------- */
+  /* ---------- 翻译设置 ---------- */
+  function openSettingsModal() {
+    const cfg = getTransCfg();
+    $("#settings-provider").value = cfg.provider;
+    $("#settings-youdao-key").value = cfg.youdaoKey;
+    $("#settings-youdao-secret").value = cfg.youdaoSecret;
+    $("#settings-deepl-key").value = cfg.deeplKey;
+    $("#settings-youdao").classList.toggle("hidden", cfg.provider !== "youdao");
+    $("#settings-deepl").classList.toggle("hidden", cfg.provider !== "deepl");
+    showModal("settings-modal");
+  }
+  $("#btn-settings").addEventListener("click", openSettingsModal);
+  $("#settings-close").addEventListener("click", () => closeModal("settings-modal"));
+  $("#settings-provider").addEventListener("change", () => {
+    const p = $("#settings-provider").value;
+    $("#settings-youdao").classList.toggle("hidden", p !== "youdao");
+    $("#settings-deepl").classList.toggle("hidden", p !== "deepl");
+  });
+  $("#settings-save").addEventListener("click", () => {
+    setTransCfg({
+      provider: $("#settings-provider").value,
+      youdaoKey: $("#settings-youdao-key").value.trim(),
+      youdaoSecret: $("#settings-youdao-secret").value.trim(),
+      deeplKey: $("#settings-deepl-key").value.trim()
+    });
+    closeModal("settings-modal");
+    alert("翻译设置已保存。");
+  });
   renderArticleList();
   loadArticle(EN_ARTICLES[0].id);
   updateCounts();

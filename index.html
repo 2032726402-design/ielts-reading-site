@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>每日阅读 · Daily Reading</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="fonts/lxgw/lxgwwenkai-regular.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont/style.css">
 </head>
 <body>
 
@@ -18,6 +18,7 @@
     </nav>
     <button id="btn-bookmarks" class="icon-btn" title="书签">书签 (<span id="bookmark-count">0</span>)</button>
     <button id="btn-notes" class="icon-btn" title="笔记">笔记 (<span id="note-count">0</span>)</button>
+    <button id="btn-settings" class="icon-btn" title="翻译设置">设置</button>
   </div>
 </header>
 
@@ -36,7 +37,7 @@
       <div class="reader-meta" id="reader-meta"></div>
     </div>
     <article class="article-body" id="article-body"></article>
-    <div class="reader-footer" id="reader-footer">选中文字可高亮、划线、翻译、记笔记；点击英文单词查看释义与例句；点「书签」收藏本文或段落。数据保存在本地浏览器。</div>
+    <div class="reader-footer" id="reader-footer">鼠标划取文字即自动弹出翻译，可高亮、划线、按句做书签、记笔记；点击「查询释义」查看单词详解。数据保存在本地浏览器。</div>
   </section>
 
   <!-- 右侧工具面板 -->
@@ -63,9 +64,11 @@
 <div class="float-toolbar hidden" id="float-toolbar">
   <button class="ft-btn" data-action="highlight">高亮</button>
   <button class="ft-btn" data-action="underline">划线</button>
-  <button class="ft-btn" data-action="translate">翻译</button>
+  <button class="ft-btn" data-action="bookmark">书签</button>
   <button class="ft-btn" data-action="note">笔记</button>
+  <button class="ft-btn" data-action="translate">翻译</button>
   <button class="ft-btn" data-action="word">查询释义</button>
+  <div class="float-trans hidden" id="float-trans"></div>
 </div>
 
 <!-- 翻译结果弹层 -->
@@ -104,6 +107,38 @@
       <div class="modal-original" id="note-source"></div>
       <textarea id="note-input" placeholder="写下你的理解、批注或联想…"></textarea>
       <button class="primary-btn" id="note-save">保存笔记</button>
+    </div>
+  </div>
+</div>
+
+<!-- 翻译设置弹层 -->
+<div class="modal-mask hidden" id="settings-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span>翻译设置</span>
+      <button class="modal-close" id="settings-close">&times;</button>
+    </div>
+    <div class="modal-body settings-body">
+      <p class="settings-hint">鼠标划取文字会自动弹出翻译，无需点击。翻译服务支持有道智云 / DeepL / MyMemory（免费兜底）；有道与 DeepL 需在对应官网注册密钥后填入，未填则自动使用 MyMemory。</p>
+      <label class="settings-label">翻译服务</label>
+      <select id="settings-provider">
+        <option value="mymemory">MyMemory（免费，无需密钥）</option>
+        <option value="youdao">有道智云（推荐）</option>
+        <option value="deepl">DeepL</option>
+      </select>
+      <div id="settings-youdao">
+        <label class="settings-label">有道应用ID（appKey）</label>
+        <input type="text" id="settings-youdao-key" placeholder="例如 8f8f3b26e1f8c3f9" autocomplete="off">
+        <label class="settings-label">有道应用密钥（appSecret）</label>
+        <input type="password" id="settings-youdao-secret" placeholder="请输入应用密钥" autocomplete="off">
+        <p class="settings-hint">到 <a href="https://ai.youdao.com" target="_blank" rel="noopener">有道智云控制台</a> 创建「文本翻译」应用即可获得 appKey 与 appSecret。</p>
+      </div>
+      <div id="settings-deepl" class="hidden">
+        <label class="settings-label">DeepL Auth Key</label>
+        <input type="password" id="settings-deepl-key" placeholder="请输入 DeepL Auth Key" autocomplete="off">
+        <p class="settings-hint">到 <a href="https://www.deepl.com/pro-api" target="_blank" rel="noopener">DeepL API 官网</a> 注册免费版获得 Auth Key。</p>
+      </div>
+      <button class="primary-btn" id="settings-save">保存设置</button>
     </div>
   </div>
 </div>
