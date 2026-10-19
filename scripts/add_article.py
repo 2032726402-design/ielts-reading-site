@@ -50,7 +50,9 @@ def _find_vocab_block(text):
 
 
 def _parse_array(text):
-    arr = re.sub(r"([{,]\s*)([A-Za-z_$][\w$]*)\s*:", r'\1"\2":', text)
+    # 仅替换行首缩进的 JS 无引号键（如 "    id: \"en-001\","），
+    # 避免把字符串内容中的 ", Word:" 误当作对象键而破坏 JSON。
+    arr = re.sub(r"(?m)^(\s*)([A-Za-z_$][\w$]*)\s*:", r'\1"\2":', text)
     return json.loads(arr)
 
 
