@@ -700,6 +700,7 @@
   /* ---------- 顶栏导航 ---------- */
   $$(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (!btn.dataset.cat) return; // 电子书等非文章栏目由独立模块处理
       $$(".nav-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       currentCat = btn.dataset.cat;

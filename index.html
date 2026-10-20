@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>每日阅读 · Daily Reading</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/ebook.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont/style.css">
 </head>
 <body>
@@ -15,6 +16,7 @@
     <nav class="main-nav">
       <button class="nav-btn active" data-cat="en">雅思英语</button>
       <button class="nav-btn" data-cat="zh">中文读写</button>
+      <button class="nav-btn" data-ebook="1">📖</button>
     </nav>
     <button id="btn-bookmarks" class="icon-btn" title="书签">书签 (<span id="bookmark-count">0</span>)</button>
     <button id="btn-notes" class="icon-btn" title="笔记">笔记 (<span id="note-count">0</span>)</button>
@@ -59,6 +61,81 @@
     </div>
   </aside>
 </main>
+
+<!-- 电子书阅读模块（独立区域，不混入原雅思/中文栏目） -->
+<section id="ebook-module" class="ebook-module hidden">
+  <!-- 书架视图 -->
+  <div class="eb-shelf" id="eb-shelf">
+    <div class="eb-shelf-head">
+      <h2 class="eb-shelf-title">我的书架</h2>
+      <button class="eb-btn eb-btn-back" id="eb-back-site" title="返回阅读网站">← 返回阅读网站</button>
+    </div>
+    <div class="eb-shelf-grid" id="eb-shelf-grid"></div>
+    <p class="eb-shelf-note">阅读进度、书签与高亮保存在当前浏览器（localStorage），更换设备或浏览器不会同步。</p>
+  </div>
+
+  <!-- 阅读视图 -->
+  <div class="eb-reader hidden" id="eb-reader">
+    <header class="eb-reader-bar">
+      <div class="eb-bar-left">
+        <button class="eb-btn" id="eb-back-shelf" title="返回书架">← 书架</button>
+        <button class="eb-btn" id="eb-toc-toggle" title="目录">目录</button>
+      </div>
+      <div class="eb-bar-title" id="eb-chapter-title"></div>
+      <div class="eb-bar-right">
+        <span class="eb-progress" id="eb-progress">0%</span>
+        <button class="eb-btn" id="eb-font-dec" title="减小字体">A−</button>
+        <button class="eb-btn" id="eb-font-inc" title="增大字体">A+</button>
+        <button class="eb-btn" id="eb-theme-toggle" title="切换主题">主题</button>
+        <button class="eb-btn" id="eb-highlight-btn" title="查看高亮">高亮</button>
+        <button class="eb-btn" id="eb-bookmark-btn" title="书签">书签</button>
+      </div>
+    </header>
+
+    <div class="eb-reader-body">
+      <!-- 目录侧栏（桌面）/ 抽屉（移动） -->
+      <nav class="eb-toc hidden" id="eb-toc">
+        <div class="eb-toc-head">
+          <span>目录</span>
+          <button class="eb-btn" id="eb-toc-close" title="收起目录">✕</button>
+        </div>
+        <ul class="eb-toc-list" id="eb-toc-list"></ul>
+      </nav>
+      <div class="eb-toc-mask hidden" id="eb-toc-mask"></div>
+
+      <!-- 高亮管理抽屉 -->
+      <div class="eb-drawer hidden" id="eb-hl-drawer">
+        <div class="eb-drawer-head">
+          <span>我的高亮</span>
+          <button class="eb-btn" id="eb-hl-close" title="关闭">✕</button>
+        </div>
+        <ul class="eb-drawer-list" id="eb-hl-list"></ul>
+      </div>
+
+      <!-- 书签管理抽屉 -->
+      <div class="eb-drawer hidden" id="eb-bm-drawer">
+        <div class="eb-drawer-head">
+          <span>我的书签</span>
+          <div class="eb-drawer-actions">
+            <button class="eb-btn eb-btn-accent" id="eb-bm-add" title="在当前阅读位置添加书签">＋ 在此位置添加书签</button>
+            <button class="eb-btn" id="eb-bm-close" title="关闭">✕</button>
+          </div>
+        </div>
+        <ul class="eb-drawer-list" id="eb-bm-list"></ul>
+      </div>
+
+      <!-- 正文 -->
+      <article class="eb-content" id="eb-content"></article>
+
+      <!-- 选中文字后的高亮操作菜单 -->
+      <div class="eb-hl-menu hidden" id="eb-hl-menu"></div>
+    </div>
+
+    <footer class="eb-reader-foot">
+      <span id="eb-foot-info">划选文字即可添加高亮；点击高亮可改色或删除。</span>
+    </footer>
+  </div>
+</section>
 
 <!-- 选中文字浮动工具条 -->
 <div class="float-toolbar hidden" id="float-toolbar">
@@ -145,6 +222,8 @@
 
 <script src="data/articles-en.js"></script>
 <script src="data/articles-zh.js"></script>
+<script src="data/ebook/flowers-book.js"></script>
 <script src="js/app.js"></script>
+<script src="js/ebook.js"></script>
 </body>
 </html>

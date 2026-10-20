@@ -1,0 +1,253 @@
+/* ===== 电子书阅读模块（独立于原雅思/中文栏目） ===== */
+/* 进入电子书模式时隐藏原三栏布局 */
+body.ebook-active .layout{display:none}
+body.ebook-active .site-header{border-bottom-color:var(--line)}
+body.ebook-active .ebook-module{display:block}
+
+.ebook-module{
+  max-width:1280px;margin:0 auto;padding:28px 24px 48px;
+  min-height:calc(100vh - 90px);
+}
+.ebook-module.hidden{display:none}
+
+/* ===== 书架 ===== */
+.eb-shelf{}
+.eb-shelf-head{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  margin-bottom:28px;
+}
+.eb-shelf-title{font-size:22px;font-weight:600;letter-spacing:.5px}
+.eb-shelf-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:24px;
+}
+.eb-book-card{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:.2s;
+  display:flex;flex-direction:column;
+}
+.eb-book-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.1)}
+.eb-book-cover-wrap{aspect-ratio:3/4;overflow:hidden;background:#f0eee8;position:relative}
+.eb-book-cover-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.eb-book-info{padding:14px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.eb-book-title{font-size:16px;font-weight:600;line-height:1.4}
+.eb-book-author{font-size:12.5px;color:var(--muted)}
+.eb-book-meta{font-size:12px;color:var(--muted);line-height:1.6}
+.eb-book-progress{
+  margin-top:auto;padding-top:10px;font-size:12px;color:var(--accent);
+}
+.eb-book-progress .eb-pbar{
+  display:block;height:4px;background:var(--accent-soft);border-radius:2px;margin-top:6px;overflow:hidden;
+}
+.eb-book-progress .eb-pbar i{
+  display:block;height:100%;background:var(--accent);border-radius:2px;
+}
+.eb-shelf-note{margin-top:28px;font-size:12.5px;color:var(--muted)}
+
+/* ===== 阅读视图 ===== */
+.eb-reader{
+  display:flex;flex-direction:column;min-height:calc(100vh - 130px);
+}
+.eb-reader-bar{
+  position:sticky;top:60px;z-index:80;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:rgba(250,250,248,.94);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:10px;
+  padding:8px 12px;margin-bottom:16px;flex-wrap:wrap;
+}
+.eb-bar-left,.eb-bar-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.eb-bar-title{
+  font-size:14px;font-weight:600;max-width:40vw;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.eb-progress{font-size:12px;color:var(--muted);white-space:nowrap}
+.eb-btn{
+  font-size:12.5px;padding:5px 10px;border-radius:6px;color:var(--muted);
+  border:1px solid transparent;transition:.15s;white-space:nowrap;
+}
+.eb-btn:hover{color:var(--ink);background:#f0eee8;border-color:var(--line)}
+.eb-btn.active{color:var(--accent);background:var(--accent-soft);border-color:var(--accent)}
+
+.eb-reader-body{position:relative;display:flex;gap:20px;align-items:flex-start}
+.eb-content{
+  flex:1;min-width:0;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow);
+  padding:40px 56px 64px;
+}
+.eb-content .eb-chapter-title{
+  font-size:24px;font-weight:700;line-height:1.5;text-align:center;
+  margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--line);
+}
+.eb-content .eb-sub-title{
+  font-size:17px;font-weight:600;margin:2em 0 .8em;color:var(--ink);
+}
+.eb-content .eb-para{
+  font-family:var(--serif-cn);
+  font-size:17px;line-height:2.05;color:#333;text-align:justify;
+  margin-bottom:1.2em;text-indent:0;
+}
+.eb-content .eb-note{
+  font-size:13px;color:var(--muted);line-height:1.9;
+  border-left:3px solid var(--line);padding:8px 12px;margin:1.2em 0;
+  background:#f7f6f2;
+}
+.eb-content .eb-divider{border:none;border-top:1px solid var(--line);margin:2em 0}
+.eb-content .eb-image{max-width:100%;height:auto;margin:1.5em auto;display:block;border-radius:6px}
+.eb-content .eb-para,.eb-content .eb-note{position:relative}
+.eb-bm-flag{
+  display:inline-block;margin-left:6px;font-size:12px;cursor:default;user-select:none;
+  opacity:.8;vertical-align:1px;
+}
+.eb-content .eb-has-bookmark{border-left:3px solid var(--note-color);padding-left:8px}
+.eb-reader-foot{
+  margin-top:16px;font-size:12px;color:var(--muted);text-align:center;
+}
+
+/* ===== 目录 ===== */
+.eb-toc{
+  width:250px;flex-shrink:0;position:sticky;top:130px;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);max-height:calc(100vh - 160px);overflow-y:auto;
+  padding:12px;z-index:60;
+}
+.eb-toc.hidden{display:none}
+.eb-toc-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 6px 10px;border-bottom:1px solid var(--line);margin-bottom:8px;
+  font-size:13px;font-weight:600;
+}
+.eb-toc-list{list-style:none;font-size:13px}
+.eb-toc-list .eb-toc-chapter{
+  padding:8px 10px;border-radius:6px;cursor:pointer;color:#444;
+  display:flex;justify-content:space-between;align-items:center;gap:6px;
+  transition:.15s;
+}
+.eb-toc-list .eb-toc-chapter:hover{background:var(--accent-soft);color:var(--accent)}
+.eb-toc-list .eb-toc-chapter.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.eb-toc-arrow{font-size:10px;transition:transform .2s;color:var(--muted)}
+.eb-toc-chapter.open .eb-toc-arrow{transform:rotate(90deg)}
+.eb-toc-sub{list-style:none;margin:2px 0 6px;display:none}
+.eb-toc-chapter.open + .eb-toc-sub{display:block}
+.eb-toc-sub .eb-toc-section{
+  padding:6px 10px 6px 24px;border-radius:6px;cursor:pointer;color:var(--muted);
+  font-size:12.5px;transition:.15s;
+}
+.eb-toc-sub .eb-toc-section:hover{color:var(--accent);background:var(--accent-soft)}
+.eb-toc-sub .eb-toc-section.active{color:var(--accent);font-weight:600}
+.eb-toc-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:55}
+.eb-toc-mask.hidden{display:none}
+
+/* ===== 高亮 ===== */
+.eb-hl{padding:1px 2px;border-radius:3px;cursor:pointer;color:inherit;transition:.1s}
+.eb-hl:hover{outline:1px dashed rgba(0,0,0,.35);outline-offset:1px}
+.eb-hl-yellow{background:#ffe28a}
+.eb-hl-green{background:#c8e6c9}
+.eb-hl-blue{background:#bbdefb}
+.eb-hl-pink{background:#f8bbd0}
+.eb-hl-underline{background:transparent;text-decoration:underline;text-decoration-thickness:2px}
+
+/* 高亮操作菜单 */
+.eb-hl-menu{
+  position:fixed;z-index:90;background:#fff;border:1px solid var(--line);
+  border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:8px;
+  display:flex;flex-direction:column;gap:4px;min-width:130px;
+}
+.eb-hl-menu.hidden{display:none}
+.eb-hl-menu .eb-hl-menu-title{font-size:11px;color:var(--muted);padding:2px 6px}
+.eb-hl-colors{display:flex;gap:8px;padding:4px 6px}
+.eb-hl-color{
+  width:22px;height:22px;border-radius:50%;border:2px solid #fff;
+  box-shadow:0 0 0 1px var(--line);cursor:pointer;transition:transform .1s;
+}
+.eb-hl-color:hover{transform:scale(1.2)}
+.eb-hl-menu .eb-hl-del{
+  font-size:12.5px;color:var(--ul-color);padding:6px 8px;border-radius:6px;text-align:left;
+}
+.eb-hl-menu .eb-hl-del:hover{background:#fdecec}
+
+/* ===== 抽屉（高亮/书签管理） ===== */
+.eb-drawer{
+  width:300px;flex-shrink:0;position:sticky;top:130px;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);max-height:calc(100vh - 160px);overflow-y:auto;
+  padding:12px;z-index:60;
+}
+.eb-drawer.hidden{display:none}
+.eb-drawer-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 6px 10px;border-bottom:1px solid var(--line);margin-bottom:8px;
+  font-size:13px;font-weight:600;
+}
+.eb-drawer-actions{display:flex;gap:6px;align-items:center}
+.eb-btn-accent{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
+.eb-btn-accent:hover{opacity:.9}
+.eb-drawer-list{list-style:none;font-size:13px}
+.eb-drawer-list li{
+  padding:10px;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;font-size:12.5px;
+}
+.eb-drawer-list .eb-d-item{background:var(--panel,#fff);border:1px solid var(--border,#e3e3e3);border-radius:8px;padding:8px 10px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.eb-drawer-list .eb-d-item:hover{border-color:var(--accent,#e8590c);box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.eb-drawer-list .eb-d-item-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.eb-drawer-list .eb-d-chapter{color:var(--muted);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eb-drawer-list .eb-d-text{
+  color:#333;line-height:1.7;font-size:12.5px;margin:4px 0;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.eb-drawer-list .eb-d-del{color:var(--muted);font-size:12px;padding:2px 4px}
+.eb-drawer-list .eb-d-del:hover{color:var(--ul-color)}
+.eb-drawer-list .eb-d-jump{color:var(--accent);font-size:11.5px;cursor:pointer;border-bottom:1px dashed currentColor}
+.eb-drawer-list .eb-d-jump:hover{text-decoration:underline}
+.eb-drawer-list .eb-d-empty{color:var(--muted);padding:12px 6px}
+.eb-d-color{
+  display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;
+}
+
+/* ===== 主题：浅色 / 护眼 / 深色 ===== */
+body.eb-theme-light .eb-content{background:#fff;border-color:var(--line)}
+body.eb-theme-light .eb-content .eb-para{color:#2b2b2b}
+
+body.eb-theme-sepia .eb-content{background:#f5ecd9;border-color:#e2d4b4}
+body.eb-theme-sepia .eb-content .eb-para{color:#5b4636}
+body.eb-theme-sepia .eb-content .eb-note{background:#efe3ca;border-color:#d9c9a4;color:#7a6a50}
+body.eb-theme-sepia .eb-content .eb-chapter-title{border-color:#e2d4b4}
+
+body.eb-theme-dark .eb-content{background:#1e1e1e;border-color:#333}
+body.eb-theme-dark .eb-content .eb-para{color:#d4d4d4}
+body.eb-theme-dark .eb-content .eb-note{background:#2a2a2a;border-color:#444;color:#aaa}
+body.eb-theme-dark .eb-content .eb-chapter-title{border-color:#333;color:#eee}
+body.eb-theme-dark .eb-content .eb-sub-title{color:#eee}
+body.eb-theme-dark .eb-hl-yellow{background:#6b5a14;color:#ffe28a}
+body.eb-theme-dark .eb-hl-green{background:#2e4d2f;color:#c8e6c9}
+body.eb-theme-dark .eb-hl-blue{background:#1e3a5c;color:#bbdefb}
+body.eb-theme-dark .eb-hl-pink{background:#5c2a3a;color:#f8bbd0}
+
+/* ===== 响应式 ===== */
+@media(max-width:1100px){
+  .eb-toc{width:220px}
+  .eb-drawer{width:260px}
+  .eb-content{padding:32px 36px}
+}
+@media(max-width:760px){
+  .ebook-module{padding:16px}
+  .eb-reader-bar{top:52px;padding:6px 10px}
+  .eb-bar-title{max-width:100%;order:3;width:100%;text-align:center}
+  .eb-reader-body{flex-direction:column}
+  .eb-content{padding:24px 20px 48px;font-size:16px}
+  .eb-toc{
+    position:fixed;left:0;top:0;bottom:0;width:78vw;max-width:320px;
+    max-height:none;border-radius:0;z-index:90;margin:0;
+    transform:translateX(0);transition:.25s;
+  }
+  .eb-toc.hidden{display:block;transform:translateX(-110%)}
+  .eb-drawer{
+    position:fixed;right:0;top:0;bottom:0;width:82vw;max-width:340px;
+    max-height:none;border-radius:0;z-index:90;margin:0;
+    transform:translateX(0);transition:.25s;
+  }
+  .eb-drawer.hidden{display:block;transform:translateX(110%)}
+  .eb-toc-mask,.eb-drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:85}
+  .eb-hl-menu{min-width:120px}
+  .eb-shelf-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+  .eb-book-info{padding:10px 12px}
+  .eb-book-title{font-size:14px}
+}
